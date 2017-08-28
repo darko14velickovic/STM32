@@ -15,7 +15,7 @@ uint16_t RGB888_to_RGB565(uint32_t RGB);
 //image manipulation
 void grayscale(volatile uint16_t * image);
 
-void convolution(volatile uint16_t  * image, int16_t * kernel);
+void convolution(volatile uint16_t * image, int16_t * kernel, uint16_t * tmp_buffer);
 
 void test(volatile uint16_t * image);
 #endif

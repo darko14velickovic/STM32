@@ -130,21 +130,32 @@ void test(volatile uint16_t * image)
 	memset((uint16_t *)image,0,320 * 240 * 2);
 }
 
-void convolution(volatile uint16_t * image, int16_t * kernel)
+void convolution(volatile uint16_t * image, int16_t * kernel, uint16_t * tmp_buffer)
 {
 	//uint32_t image_size = width * height;
 	//int image_byte_size = image_size * 16; // 5 6 5 RGB
 	
-	uint16_t kernelPointNumber = 3 * 3;
+	//uint16_t kernelPointNumber = 3 * 3;
 	uint16_t centerPointIndex = 1;
 	uint16_t IMG_ROWS = 100;
 	uint16_t IMG_COLUMNS = 240;
-	uint16_t normalization = 16;
-
+	uint16_t normalization = 0;
+	
+	for(uint8_t i = 0; i < 9; i++)
+	{
+		normalization += kernel[i];
+	}
+	
+	//uint16_t tmp_buffer[240 * 100] = {0};
+	
+	volatile uint8_t rgbRed = 0;
+	volatile uint8_t rgbGreen = 0;
+	volatile uint8_t rgbBlue = 0;
+	
 	for(uint16_t i = 0; i < IMG_ROWS - 3; i++)
 	{
-		uint16_t tmp_counter = 0;
-		volatile uint16_t tmp_buffer[IMG_COLUMNS * IMG_ROWS];
+		//uint16_t tmp_counter = 0;
+		
 		
 		for (uint16_t j = 0; j < IMG_COLUMNS - 3; j++)
 		{
@@ -160,9 +171,13 @@ void convolution(volatile uint16_t * image, int16_t * kernel)
 					
 					volatile uint32_t rgba888 = RGB565_to_RGB888(image[(i + k) * IMG_COLUMNS + j + m]);
 					
-					accomulatorR += kernel[kernelOffset] * ((rgba888 & 0xff000000) >> 24 );
-					accomulatorG += kernel[kernelOffset] * ((rgba888 & 0x00ff0000) >> 16 );
-					accomulatorB += kernel[kernelOffset] * ((rgba888 & 0x0000ff00) >> 8 );
+					rgbRed = ((rgba888 & 0xff000000) >> 24 );
+					rgbGreen = ((rgba888 & 0x00ff0000) >> 16 );
+					rgbBlue = ((rgba888 & 0x0000ff00) >> 8 );
+					
+					accomulatorR += kernel[kernelOffset] * rgbRed;
+					accomulatorG += kernel[kernelOffset] * rgbGreen;
+					accomulatorB += kernel[kernelOffset] * rgbBlue;
 					
 				}
 			}
@@ -177,12 +192,10 @@ void convolution(volatile uint16_t * image, int16_t * kernel)
 			tmp = (tmp | averageG) << 8;
 			tmp =(tmp | averageB) << 8;
 			
-			tmp_buffer[tmp_counter++] = RGB888_to_RGB565(tmp);
+			tmp_buffer[ (i+centerPointIndex) * IMG_COLUMNS + j + centerPointIndex] = RGB888_to_RGB565(tmp);
 			
 		}
-		// copy to image buffer
-		memcpy((uint16_t*)&image[0], (uint16_t *)tmp_buffer, sizeof(tmp_buffer));
 
 	}
-	
+	//memcpy((uint16_t*)image, tmp_buffer, sizeof(tmp_buffer));
 }

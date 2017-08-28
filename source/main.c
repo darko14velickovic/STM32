@@ -130,7 +130,9 @@ int main(void)
 			
 			if(NumberPressed == 2)
 			{
-				convolution(FrameBuffer, GausBlurKernel);
+				uint16_t buffer[240 * 100];
+				convolution(FrameBuffer, GausBlurKernel, buffer);
+				memcpy((uint16_t*)FrameBuffer, buffer, sizeof(buffer));
 			}
 			else if(NumberPressed == 0)
 			{
