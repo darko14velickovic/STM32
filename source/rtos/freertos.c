@@ -35,8 +35,8 @@
 #include "FreeRTOS.h"
 #include "task.h"
 #include "cmsis_os.h"
-//#include "headers.h"
-//#include "dsp.h"
+#include "headers.h"
+#include "dsp.h"
 
 /* USER CODE BEGIN Includes */     
 
@@ -97,8 +97,8 @@ void MX_FREERTOS_Init(void) {
   /* USER CODE END RTOS_QUEUES */
 }
 
-//extern bool ButtonPressed;
-//extern uint8_t NumberPressed;
+extern bool ButtonPressed;
+extern uint8_t NumberPressed;
 
 
 void UserInteractionTask(void const * argument)
@@ -106,17 +106,17 @@ void UserInteractionTask(void const * argument)
 	
 	for(;;)
   {
-//		if((GPIOReadPin(BUTTON_PORT,BUTTON_PIN) == GPIO_PIN_SET) && !ButtonPressed)
-//    {
-//      ButtonPressed = true;
-//			NumberPressed += 1;
-//			NumberPressed %= 4;
-//			HAL_StatusTypeDef result = HAL_DCMI_Start_DMA(&hdcmi,DCMI_MODE_SNAPSHOT,(uint32_t)&FrameBuffer,(uint32_t)(IMG_ROWS * IMG_COLUMNS * 2/4));     
-//    }
-//    else if(GPIOReadPin(BUTTON_PORT,BUTTON_PIN) == GPIO_PIN_RESET)
-//    {
-//      ButtonPressed = false;
-//    }
+		if((GPIOReadPin(BUTTON_PORT,BUTTON_PIN) == GPIO_PIN_SET) && !ButtonPressed)
+    {
+      ButtonPressed = true;
+			NumberPressed += 1;
+			NumberPressed %= 4;
+			HAL_StatusTypeDef result = HAL_DCMI_Start_DMA(&hdcmi,DCMI_MODE_SNAPSHOT,(uint32_t)&FrameBuffer,(uint32_t)(IMG_ROWS * IMG_COLUMNS * 2/4));     
+    }
+    else if(GPIOReadPin(BUTTON_PORT,BUTTON_PIN) == GPIO_PIN_RESET)
+    {
+      ButtonPressed = false;
+    }
     osDelay(1);
   }
 }
@@ -128,24 +128,24 @@ void StartDefaultTask(void const * argument)
 	
 	
 	// OV7670 configuration
-//	if(OV7670Init() == true)
-//  {
-//		LCD_ILI9341_Puts(100, 165, "Failed", &LCD_Font_16x26, ILI9341_COLOR_RED, ILI9341_COLOR_BLACK);
-//		LCD_ILI9341_Puts(20, 200, "Push reset button", &LCD_Font_16x26, ILI9341_COLOR_WHITE, ILI9341_COLOR_BLACK);
-//		while(1)
-//    {
-//      
-//		}
-//	}		
-//	else
-//  {
-//		LCD_ILI9341_Puts(100, 165, "Success", &LCD_Font_16x26, ILI9341_COLOR_WHITE, ILI9341_COLOR_BLACK);   
-//    // LCD welcome page
-//    LCD_ILI9341_Fill(ILI9341_COLOR_BLACK);
-//    LCD_ILI9341_Puts(60, 110, "Press button", &LCD_Font_16x26, ILI9341_COLOR_WHITE, ILI9341_COLOR_BLUE);
-//    //HAL_DCMI_Start_DMA(&hdcmi,DCMI_MODE_CONTINUOUS,(uint32_t)&FrameBuffer,(uint32_t)(IMG_ROWS * IMG_COLUMNS * 2/4));
-//	}
-//	LCD_ILI9341_Rotate(LCD_ILI9341_Orientation_Landscape_1);
+	if(OV7670Init() == true)
+  {
+		LCD_ILI9341_Puts(100, 165, "Failed", &LCD_Font_16x26, ILI9341_COLOR_RED, ILI9341_COLOR_BLACK);
+		LCD_ILI9341_Puts(20, 200, "Push reset button", &LCD_Font_16x26, ILI9341_COLOR_WHITE, ILI9341_COLOR_BLACK);
+		while(1)
+    {
+      
+		}
+	}		
+	else
+  {
+		LCD_ILI9341_Puts(100, 165, "Success", &LCD_Font_16x26, ILI9341_COLOR_WHITE, ILI9341_COLOR_BLACK);   
+    // LCD welcome page
+    LCD_ILI9341_Fill(ILI9341_COLOR_BLACK);
+    LCD_ILI9341_Puts(60, 110, "Press button", &LCD_Font_16x26, ILI9341_COLOR_WHITE, ILI9341_COLOR_BLUE);
+    //HAL_DCMI_Start_DMA(&hdcmi,DCMI_MODE_CONTINUOUS,(uint32_t)&FrameBuffer,(uint32_t)(IMG_ROWS * IMG_COLUMNS * 2/4));
+	}
+	LCD_ILI9341_Rotate(LCD_ILI9341_Orientation_Landscape_1);
 	
 	int16_t GausBlurKernel[25] = { 1, 4, 	7, 	4, 1,
 																4, 16, 26, 16, 4,
@@ -157,40 +157,40 @@ void StartDefaultTask(void const * argument)
   /* Infinite loop */
   for(;;)
   {
-//		if(FrameReady == true)
-//    {		
-//			// Show camera image
-//			
-//			if(NumberPressed == 3)
-//			{
-//				test(FrameBuffer);
-//			}
-//			else if(NumberPressed == 2)
-//			{
-//				uint16_t buffer[240 * 100];
-//				
-//				convolution(FrameBuffer, GausBlurKernel, buffer);
-//				memcpy((uint16_t*)FrameBuffer, buffer, sizeof(buffer));
-//				
-//				convolution(&FrameBuffer[240 * 100], GausBlurKernel, buffer);
-//				memcpy((uint16_t*)&FrameBuffer[240 * 100], buffer, sizeof(buffer));
-//				
-//			}
-//			else if(NumberPressed == 0)
-//			{
-//					grayscale(FrameBuffer);
-//			}
-//			// else default image
-//			
-//			
-//			LCD_ILI9341_DisplayImage((uint16_t*)FrameBuffer);
-//			
-//			//LCD_ILI9341_DisplayImageSDRAM(0);
-//			
-//			FrameReady = false;
-//			
-//			HAL_StatusTypeDef result = HAL_DCMI_Start_DMA(&hdcmi,DCMI_MODE_SNAPSHOT,(uint32_t)&FrameBuffer,(uint32_t)(IMG_ROWS * IMG_COLUMNS * 2/4));
-//		}		
+		if(FrameReady == true)
+    {		
+			// Show camera image
+			
+			if(NumberPressed == 3)
+			{
+				test(FrameBuffer);
+			}
+			else if(NumberPressed == 2)
+			{
+				uint16_t buffer[240 * 100];
+				
+				convolution(FrameBuffer, GausBlurKernel, buffer);
+				memcpy((uint16_t*)FrameBuffer, buffer, sizeof(buffer));
+				
+				convolution(&FrameBuffer[240 * 100], GausBlurKernel, buffer);
+				memcpy((uint16_t*)&FrameBuffer[240 * 100], buffer, sizeof(buffer));
+				
+			}
+			else if(NumberPressed == 0)
+			{
+					grayscale(FrameBuffer);
+			}
+			// else default image
+			
+			
+			LCD_ILI9341_DisplayImage((uint16_t*)FrameBuffer);
+			
+			//LCD_ILI9341_DisplayImageSDRAM(0);
+			
+			FrameReady = false;
+			
+			HAL_StatusTypeDef result = HAL_DCMI_Start_DMA(&hdcmi,DCMI_MODE_SNAPSHOT,(uint32_t)&FrameBuffer,(uint32_t)(IMG_ROWS * IMG_COLUMNS * 2/4));
+		}		
 
     osDelay(1);
   }
