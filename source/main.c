@@ -1,12 +1,15 @@
 #include "headers.h"
 #include "dsp.h"
+#include "cmsis_os.h"
 
 volatile bool FrameReady = false;
 bool ButtonPressed = false;
 
 
 uint8_t NumberPressed = 0;
+
 void SystemClock_Config(void);
+void MX_FREERTOS_Init(void);
 
 //uint32_t* Frame1 = (uint32_t*)SDRAM_START_ADR,Frame2 = (uint32_t*)(SDRAM_START_ADR + 153600);
 
@@ -24,6 +27,9 @@ void HAL_DCMI_FrameEventCallback(DCMI_HandleTypeDef *hdcmi)
             the HAL_DCMI_FrameEventCallback could be implemented in the user file
    */
 }
+
+
+
 int main(void)
 {
   // Reset of all peripherals, Initializes the Flash interface and the Systick
@@ -56,6 +62,12 @@ int main(void)
   
   GPIOSetHigh(LEDS_PORT,LED_GREEN_PIN | LED_RED_PIN);
   
+	/* Call init function for freertos objects (in freertos.c) */
+  MX_FREERTOS_Init();
+
+  /* Start scheduler */
+  osKernelStart();
+	
   // OV7670 configuration
 	if(OV7670Init() == true)
   {
