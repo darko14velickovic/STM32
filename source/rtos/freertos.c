@@ -47,11 +47,13 @@ osThreadId defaultTaskHandle;
 
 
 /* USER CODE BEGIN Variables */
-//osThreadId userInteractionTaskHandle;
+osThreadId userInteractionTaskHandle;
 /* USER CODE END Variables */
 
 /* Function prototypes -------------------------------------------------------*/
 void StartDefaultTask(void const * argument);
+
+void UserInteractionTask(void const * argument);
 
 void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
 
@@ -88,8 +90,9 @@ void MX_FREERTOS_Init(void) {
   /* USER CODE BEGIN RTOS_THREADS */
   /* add threads, ... */
 	
+	osThreadDef(userTask, UserInteractionTask, osPriorityNormal, 0, 128);
+	userInteractionTaskHandle = osThreadCreate(osThread(userTask), NULL);
 	
-	// userInteractionTaskHandle = osThreadCreate(osThread(defaultTask), NULL);
   /* USER CODE END RTOS_THREADS */
 
   /* USER CODE BEGIN RTOS_QUEUES */
@@ -117,7 +120,8 @@ void UserInteractionTask(void const * argument)
     {
       ButtonPressed = false;
     }
-    osDelay(1);
+    //osDelay(1);
+		taskYIELD();
   }
 }
 
@@ -134,7 +138,7 @@ void StartDefaultTask(void const * argument)
 		LCD_ILI9341_Puts(20, 200, "Push reset button", &LCD_Font_16x26, ILI9341_COLOR_WHITE, ILI9341_COLOR_BLACK);
 		while(1)
     {
-      
+      taskYIELD();
 		}
 	}		
 	else
@@ -190,9 +194,10 @@ void StartDefaultTask(void const * argument)
 			FrameReady = false;
 			
 			HAL_StatusTypeDef result = HAL_DCMI_Start_DMA(&hdcmi,DCMI_MODE_SNAPSHOT,(uint32_t)&FrameBuffer,(uint32_t)(IMG_ROWS * IMG_COLUMNS * 2/4));
+			
 		}		
-
-    osDelay(1);
+		taskYIELD();
+    //osDelay(1);
   }
   /* USER CODE END StartDefaultTask */
 }
