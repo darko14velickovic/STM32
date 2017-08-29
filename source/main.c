@@ -76,9 +76,9 @@ int main(void)
 	}
 	LCD_ILI9341_Rotate(LCD_ILI9341_Orientation_Landscape_1);
 	
-	int16_t GausBlurKernel[9] = { 1, 2, 1, 2, 4, 2, 1, 2, 1 };
+	//int16_t GausBlurKernel[9] = { 1, 2, 1, 2, 4, 2, 1, 2, 1 };
 
-																											 
+																												
 	//const int16_t SobelXDirections[] = { -1, 0, 1, -2, 0, 2, -1, 0, 1 };
 
 															 
@@ -86,13 +86,19 @@ int main(void)
 	
 	//HAL_StatusTypeDef result = HAL_DCMI_Start_DMA(&hdcmi,DCMI_MODE_CONTINUOUS,(uint32_t)&FrameBuffer,(uint32_t)(IMG_ROWS * IMG_COLUMNS * 2/4));
 	
+	int16_t GausBlurKernel[25] = { 1, 4, 	7, 	4, 1,
+																4, 16, 26, 16, 4,
+																7, 26, 41, 26, 7,
+																4, 16, 26, 16, 4,
+																1,  4,  7,  4, 1};
+	
   while (1)
   {
     if((GPIOReadPin(BUTTON_PORT,BUTTON_PIN) == GPIO_PIN_SET) && !ButtonPressed)
     {
       ButtonPressed = true;
 			NumberPressed += 1;
-			NumberPressed %= 3;
+			NumberPressed %= 4;
 			HAL_StatusTypeDef result = HAL_DCMI_Start_DMA(&hdcmi,DCMI_MODE_SNAPSHOT,(uint32_t)&FrameBuffer,(uint32_t)(IMG_ROWS * IMG_COLUMNS * 2/4));
 			//DCMI->CR |= DCMI_CR_ENABLE;
 			switch(result)
@@ -126,13 +132,20 @@ int main(void)
 			
 			
 			//grayscale(FrameBuffer,IMG_COLUMNS, IMG_ROWS, filteredBuffer);
-			
-			
-			if(NumberPressed == 2)
+			if(NumberPressed == 3)
+			{
+				test(FrameBuffer);
+			}
+			else if(NumberPressed == 2)
 			{
 				uint16_t buffer[240 * 100];
+				
 				convolution(FrameBuffer, GausBlurKernel, buffer);
 				memcpy((uint16_t*)FrameBuffer, buffer, sizeof(buffer));
+				
+				convolution(&FrameBuffer[240 * 100], GausBlurKernel, buffer);
+				memcpy((uint16_t*)&FrameBuffer[240 * 100], buffer, sizeof(buffer));
+				
 			}
 			else if(NumberPressed == 0)
 			{

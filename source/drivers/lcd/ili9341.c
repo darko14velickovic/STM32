@@ -211,6 +211,10 @@ void LCD_ILI9341_DisplayImage(uint16_t *image/*[ILI9341_PIXEL]*/)
 	
 	for (n = 0; n < ILI9341_PIXEL; n++) 
   {
+		if(n % 23456 == 0)
+		{
+			
+		}
 		i = image[n] >> 8;
 		j = image[n] & 0xFF;
 				

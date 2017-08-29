@@ -127,47 +127,64 @@ void grayscale(volatile uint16_t * image)
 
 void test(volatile uint16_t * image)
 {
-	memset((uint16_t *)image,0,320 * 240 * 2);
+	for(int i = 0; i < 76800; i++)
+	{
+		uint32_t rgba888 = RGB565_to_RGB888(image[i]);
+		
+		uint8_t red = 	((rgba888 & 0xff000000) >> 24 );
+		uint8_t green = ((rgba888 & 0x00ff0000) >> 16 );
+		uint8_t blue = 	((rgba888 & 0x0000ff00) >> 8 );
+		
+	
+		uint32_t rgbGrayscaled = 0;
+		
+		rgbGrayscaled = rgbGrayscaled | red;
+		rgbGrayscaled = rgbGrayscaled << 8;
+		
+		rgbGrayscaled = rgbGrayscaled | green;
+		rgbGrayscaled = rgbGrayscaled << 8;
+		
+		rgbGrayscaled = rgbGrayscaled | blue;
+		rgbGrayscaled = rgbGrayscaled << 8;
+		
+		image[i] = RGB888_to_RGB565(rgbGrayscaled);
+	}
 }
 
 void convolution(volatile uint16_t * image, int16_t * kernel, uint16_t * tmp_buffer)
 {
-	//uint32_t image_size = width * height;
-	//int image_byte_size = image_size * 16; // 5 6 5 RGB
 	
-	//uint16_t kernelPointNumber = 3 * 3;
-	uint16_t centerPointIndex = 1;
-	uint16_t IMG_ROWS = 100;
-	uint16_t IMG_COLUMNS = 240;
-	uint16_t normalization = 0;
+	uint16_t IMG_ROWS = 240;
+	uint16_t IMG_COLUMNS = 100;
+	int16_t normalization = 0;
+	uint8_t kernelSize = 5;
+	uint16_t centerPointIndex = 2;
 	
-	for(uint8_t i = 0; i < 9; i++)
+	for(uint8_t i = 0; i < kernelSize * kernelSize; i++)
 	{
 		normalization += kernel[i];
 	}
-	
-	//uint16_t tmp_buffer[240 * 100] = {0};
 	
 	volatile uint8_t rgbRed = 0;
 	volatile uint8_t rgbGreen = 0;
 	volatile uint8_t rgbBlue = 0;
 	
-	for(uint16_t i = 0; i < IMG_ROWS - 3; i++)
+	for(uint16_t i = 0; i < IMG_ROWS - kernelSize; i++)
 	{
 		//uint16_t tmp_counter = 0;
 		
 		
-		for (uint16_t j = 0; j < IMG_COLUMNS - 3; j++)
+		for (uint16_t j = 0; j < IMG_COLUMNS - kernelSize; j++)
 		{
 			volatile int32_t accomulatorR = 0;
 			volatile int32_t accomulatorG = 0;
 			volatile int32_t accomulatorB = 0;
 			
-			for (uint8_t k = 0; k < 3; k++) 
+			for (uint8_t k = 0; k < kernelSize; k++) 
 			{
-				for (uint8_t m = 0; m < 3; m++) 
+				for (uint8_t m = 0; m < kernelSize; m++) 
 				{
-					uint16_t kernelOffset = k * 3 + m;
+					uint16_t kernelOffset = k * kernelSize + m;
 					
 					volatile uint32_t rgba888 = RGB565_to_RGB888(image[(i + k) * IMG_COLUMNS + j + m]);
 					
@@ -182,9 +199,9 @@ void convolution(volatile uint16_t * image, int16_t * kernel, uint16_t * tmp_buf
 				}
 			}
 			
-			uint8_t averageR = (uint8_t) accomulatorR / normalization;
-			uint8_t averageG = (uint8_t) accomulatorG / normalization;
-			uint8_t averageB = (uint8_t) accomulatorB / normalization;
+			uint8_t averageR = (uint8_t) (accomulatorR / normalization);
+			uint8_t averageG = (uint8_t) (accomulatorG / normalization);
+			uint8_t averageB = (uint8_t) (accomulatorB / normalization);
 			
 			uint32_t tmp = 0;
 			
