@@ -54,7 +54,7 @@ void MX_DCMI_Init(void)
   hdcmi.Init.JPEGMode = DCMI_JPEG_DISABLE;
   HAL_DCMI_Init(&hdcmi);
 	
-	HAL_NVIC_SetPriority(DCMI_IRQn, 2, 0);
+	HAL_NVIC_SetPriority(DCMI_IRQn, 15, 0);
 	HAL_NVIC_EnableIRQ(DCMI_IRQn);
 }
 

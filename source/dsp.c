@@ -1,5 +1,6 @@
 #include "dsp.h"
-
+#include "lcdfonts.h"
+#include "ili9341.h"
 
 double sRGB_to_linear(double x) {
 	if (x < 0.04045) return x / 12.92;
@@ -151,30 +152,39 @@ void test(volatile uint16_t * image)
 	}
 }
 
-void convolution(volatile uint16_t * image, int16_t * kernel, uint16_t * tmp_buffer)
+void convolution(volatile uint16_t * image, int16_t * kernel, uint16_t * tmp_buffer, uint16_t startRow, uint16_t startColumn)
 {
-	
-	uint16_t IMG_ROWS = 240;
-	uint16_t IMG_COLUMNS = 100;
+	uint16_t WINDOW_WIDTH = 100;
+	uint16_t WINDOW_HEIGHT = 100;
+	uint16_t IMG_ROWS = 320;
+	uint16_t IMG_COLUMNS = 240;
 	int16_t normalization = 0;
 	uint8_t kernelSize = 5;
 	uint16_t centerPointIndex = 2;
+	
+	uint16_t tmpI = 0;
+	uint16_t tmpJ = 0;
 	
 	for(uint8_t i = 0; i < kernelSize * kernelSize; i++)
 	{
 		normalization += kernel[i];
 	}
+	if(normalization == 0)
+	{
+		normalization = 1;
+	}
 	
-	volatile uint8_t rgbRed = 0;
-	volatile uint8_t rgbGreen = 0;
-	volatile uint8_t rgbBlue = 0;
+	uint8_t rgbRed = 0;
+	uint8_t rgbGreen = 0;
+	uint8_t rgbBlue = 0;
 	
-	for(uint16_t i = 0; i < IMG_ROWS - kernelSize; i++)
+	for(uint16_t i = 0 ;i < WINDOW_HEIGHT - kernelSize; i++)
 	{
 		//uint16_t tmp_counter = 0;
 		
+		tmpJ = 0;
 		
-		for (uint16_t j = 0; j < IMG_COLUMNS - kernelSize; j++)
+		for (uint16_t j = 0; j < WINDOW_WIDTH - kernelSize; j++)
 		{
 			volatile int32_t accomulatorR = 0;
 			volatile int32_t accomulatorG = 0;
@@ -185,8 +195,9 @@ void convolution(volatile uint16_t * image, int16_t * kernel, uint16_t * tmp_buf
 				for (uint8_t m = 0; m < kernelSize; m++) 
 				{
 					uint16_t kernelOffset = k * kernelSize + m;
+					volatile uint32_t rgba888;
 					
-					volatile uint32_t rgba888 = RGB565_to_RGB888(image[(i + k) * IMG_COLUMNS + j + m]);
+					rgba888 = RGB565_to_RGB888(image[(i + k) * IMG_ROWS + j + m]);
 					
 					rgbRed = ((rgba888 & 0xff000000) >> 24 );
 					rgbGreen = ((rgba888 & 0x00ff0000) >> 16 );
@@ -209,10 +220,100 @@ void convolution(volatile uint16_t * image, int16_t * kernel, uint16_t * tmp_buf
 			tmp = (tmp | averageG) << 8;
 			tmp =(tmp | averageB) << 8;
 			
-			tmp_buffer[ (i+centerPointIndex) * IMG_COLUMNS + j + centerPointIndex] = RGB888_to_RGB565(tmp);
+			tmp_buffer[ (i+centerPointIndex) * WINDOW_WIDTH + j + centerPointIndex] = RGB888_to_RGB565(tmp);
 			
+			tmpJ++;
 		}
-
+	 tmpI++;
 	}
-	//memcpy((uint16_t*)image, tmp_buffer, sizeof(tmp_buffer));
+	// copy row by row from tmp to image, this will solve the stride for the image
+	for(uint16_t i = 0; i < WINDOW_HEIGHT; i++)
+	{
+		memcpy((uint16_t*)&image[(startRow + i) * IMG_ROWS + startColumn], &tmp_buffer[i * WINDOW_WIDTH], WINDOW_WIDTH * 2);
+		//LCD_ILI9341_DisplayImage((uint16_t*)image);
+	}
+	//
 }
+void convolutionGray(volatile uint16_t * image, int16_t * kernel, uint16_t * tmp_buffer, uint16_t startRow, uint16_t startColumn)
+{
+	uint16_t WINDOW_WIDTH = 100;
+	uint16_t WINDOW_HEIGHT = 100;
+	uint16_t IMG_ROWS = 320;
+	uint16_t IMG_COLUMNS = 240;
+	int16_t normalization = 0;
+	uint8_t kernelSize = 5;
+	uint16_t centerPointIndex = 2;
+	
+	uint16_t tmpI = 0;
+	uint16_t tmpJ = 0;
+	
+	for(uint8_t i = 0; i < kernelSize * kernelSize; i++)
+	{
+		normalization += kernel[i];
+	}
+	if(normalization == 0)
+	{
+		normalization = 1;
+	}
+	
+	uint8_t rgbRed = 0;
+	uint8_t rgbGreen = 0;
+	uint8_t rgbBlue = 0;
+	
+	for(uint16_t i = 0 ;i < WINDOW_HEIGHT - kernelSize; i++)
+	{
+		//uint16_t tmp_counter = 0;
+		
+		tmpJ = 0;
+		
+		for (uint16_t j = 0; j < WINDOW_WIDTH - kernelSize; j++)
+		{
+			volatile int32_t accomulatorGray = 0;
+			
+			for (uint8_t k = 0; k < kernelSize; k++) 
+			{
+				for (uint8_t m = 0; m < kernelSize; m++) 
+				{
+					uint16_t kernelOffset = k * kernelSize + m;
+					volatile uint32_t rgba888;
+					
+					rgba888 = RGB565_to_RGB888(image[(i + k) * IMG_ROWS + j + m]);
+					
+					rgbRed = ((rgba888 & 0xff000000) >> 24 );
+					rgbGreen = ((rgba888 & 0x00ff0000) >> 16 );
+					rgbBlue = ((rgba888 & 0x0000ff00) >> 8 );
+					
+					
+					
+					accomulatorGray += kernel[kernelOffset] * rgbRed;
+					//accomulatorG += kernel[kernelOffset] * 	rgbGreen;
+					//accomulatorB += kernel[kernelOffset] * 	rgbBlue;
+					
+				}
+			}
+			
+			uint8_t averageR = (uint8_t) (accomulatorGray / normalization);
+			uint8_t averageG = (uint8_t) (accomulatorGray / normalization);
+			uint8_t averageB = (uint8_t) (accomulatorGray / normalization);
+			
+			uint32_t tmp = 0;
+			
+			tmp = (tmp | averageR) << 8;
+			tmp = (tmp | averageG) << 8;
+			tmp =(tmp | averageB) << 8;
+			
+			tmp_buffer[ (i+centerPointIndex) * WINDOW_WIDTH + j + centerPointIndex] = RGB888_to_RGB565(tmp);
+			
+			tmpJ++;
+		}
+	 tmpI++;
+	}
+	// copy row by row from tmp to image, this will solve the stride for the image
+	for(uint16_t i = 0; i < WINDOW_HEIGHT; i++)
+	{
+		memcpy((uint16_t*)&image[(startRow + i) * IMG_ROWS + startColumn], &tmp_buffer[i * WINDOW_WIDTH], WINDOW_WIDTH * 2);
+		//LCD_ILI9341_DisplayImage((uint16_t*)image);
+	}
+	//
+}
+

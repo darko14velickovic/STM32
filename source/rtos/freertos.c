@@ -103,6 +103,7 @@ void MX_FREERTOS_Init(void) {
 extern bool ButtonPressed;
 extern uint8_t NumberPressed;
 
+uint16_t buffer[100 * 100] = {0};
 
 void UserInteractionTask(void const * argument)
 {
@@ -113,8 +114,9 @@ void UserInteractionTask(void const * argument)
     {
       ButtonPressed = true;
 			NumberPressed += 1;
-			NumberPressed %= 4;
-			HAL_StatusTypeDef result = HAL_DCMI_Start_DMA(&hdcmi,DCMI_MODE_SNAPSHOT,(uint32_t)&FrameBuffer,(uint32_t)(IMG_ROWS * IMG_COLUMNS * 2/4));     
+			NumberPressed %= 5;
+			HAL_StatusTypeDef result = HAL_DCMI_Start_DMA(&hdcmi,DCMI_MODE_SNAPSHOT,(uint32_t)&FrameBuffer,(uint32_t)(IMG_ROWS * IMG_COLUMNS * 2/4)); 
+			
     }
     else if(GPIOReadPin(BUTTON_PORT,BUTTON_PIN) == GPIO_PIN_RESET)
     {
@@ -157,13 +159,31 @@ void StartDefaultTask(void const * argument)
 																4, 16, 26, 16, 4,
 																1,  4,  7,  4, 1};
 	
+	int16_t SobelYKernel[25] = {2,   1,   0,   -1,  -2,
+															3,   2,   0,   -2,  -3,
+															4,   3,   0,   -3,  -4,
+															3,   2,   0,   -2,  -3,
+															2,   1,   0,   -1,  -2};
+	
   /* USER CODE BEGIN StartDefaultTask */
   /* Infinite loop */
   for(;;)
   {
+		xTaskNotifyWait(0, 0, 0, portMAX_DELAY);
+		
 		if(FrameReady == true)
     {		
 			// Show camera image
+			//NumberPressed = 4;
+			
+			if(NumberPressed == 4)
+			{
+				memset(buffer, 0, sizeof(buffer));
+				convolution(FrameBuffer, GausBlurKernel, buffer, 0, 0);
+				memset(buffer, 0, sizeof(buffer));
+				grayscale(FrameBuffer);
+				convolutionGray(FrameBuffer, SobelYKernel, buffer, 0, 0);
+			}
 			
 			if(NumberPressed == 3)
 			{
@@ -171,13 +191,10 @@ void StartDefaultTask(void const * argument)
 			}
 			else if(NumberPressed == 2)
 			{
-				uint16_t buffer[240 * 100];
-				
-				convolution(FrameBuffer, GausBlurKernel, buffer);
-				memcpy((uint16_t*)FrameBuffer, buffer, sizeof(buffer));
-				
-				convolution(&FrameBuffer[240 * 100], GausBlurKernel, buffer);
-				memcpy((uint16_t*)&FrameBuffer[240 * 100], buffer, sizeof(buffer));
+				memset(buffer, 0, sizeof(buffer));
+				//memcpy((uint16_t*)FrameBuffer, buffer, sizeof(buffer));
+				convolution(FrameBuffer, GausBlurKernel, buffer, 0, 0);
+				//memcpy((uint16_t*)FrameBuffer, buffer, sizeof(buffer));
 				
 			}
 			else if(NumberPressed == 0)
@@ -193,7 +210,7 @@ void StartDefaultTask(void const * argument)
 			
 			FrameReady = false;
 			
-			HAL_StatusTypeDef result = HAL_DCMI_Start_DMA(&hdcmi,DCMI_MODE_SNAPSHOT,(uint32_t)&FrameBuffer,(uint32_t)(IMG_ROWS * IMG_COLUMNS * 2/4));
+			//HAL_StatusTypeDef result = HAL_DCMI_Start_DMA(&hdcmi,DCMI_MODE_SNAPSHOT,(uint32_t)&FrameBuffer,(uint32_t)(IMG_ROWS * IMG_COLUMNS * 2/4));
 			
 		}		
 		taskYIELD();
