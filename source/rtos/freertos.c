@@ -36,7 +36,7 @@
 #include "task.h"
 #include "cmsis_os.h"
 #include "headers.h"
-#include "dsp.h"
+//#include "dsp.h"
 
 /* USER CODE BEGIN Includes */     
 
@@ -103,30 +103,161 @@ void MX_FREERTOS_Init(void) {
 extern bool ButtonPressed;
 extern uint8_t NumberPressed;
 
-uint16_t buffer[100 * 100] = {0};
+//uint16_t buffer[100 * 100] = {0};
+
+//Task variables
+
+uint32_t debounceCounter = 0x1FFFF;
+
+uint8_t characterCount = 28;
+
+char avaibleCharacters[28]  = {'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l' ,'m' , 'n', 'o',
+															 'p', 'q', 'r', 's', 't', 'u' ,'v', 'w', 'x', 'y', 'z', '-', '*'};
+
+
+uint8_t populateCounter = 0;															 
+char shownBuffer[32] = {0};
+
+char encryptedBuffer[32] = {0};
+
+char OTP = 0x23;
+
+bool ValueSelected = 0;
 
 void UserInteractionTask(void const * argument)
 {
 	
 	for(;;)
   {
-		if((GPIOReadPin(BUTTON_PORT,BUTTON_PIN) == GPIO_PIN_SET) && !ButtonPressed)
+		if((GPIOReadPin(BUTTON_PORT,BUTTON_PIN) == GPIO_PIN_SET) && ButtonPressed && !ValueSelected)
+		{
+			debounceCounter--;
+			
+			//button held down, long press, debounced with counter
+			if(debounceCounter == 0)
+			{
+				ValueSelected = 1;
+				
+				// select the character
+				
+		
+				if(NumberPressed == 0)
+				{
+						NumberPressed = characterCount - 1;
+				}
+				else
+				{
+					NumberPressed--;
+				}
+				
+				char chosenChar = avaibleCharacters[NumberPressed];
+				
+				// its not a command is a character
+				if(NumberPressed != 26 && NumberPressed != 27)
+				{
+					
+					shownBuffer[populateCounter] = avaibleCharacters[NumberPressed];
+					//counter move
+					populateCounter = (populateCounter + 1) % 32;
+					
+					xTaskNotifyGive(defaultTaskHandle);
+				}
+				else
+				{
+					if(NumberPressed == 27)
+					{
+						//hash and encryption
+						
+						for(uint8_t i = 0 ; i < 32; i++)
+						{
+							encryptedBuffer[i] = shownBuffer[i] ^ OTP ^ debounceCounter;
+						}
+						
+						//show result
+						xTaskNotifyGive(defaultTaskHandle);
+					}
+					else if(chosenChar == '-')
+					{
+						//remove last character from shownBuffer
+						shownBuffer[populateCounter] = ' ';
+						populateCounter--;
+						
+						
+						xTaskNotifyGive(defaultTaskHandle);
+					}
+						
+				}
+				
+				
+				
+				
+				
+			}
+			
+			
+		}
+		else if((GPIOReadPin(BUTTON_PORT,BUTTON_PIN) == GPIO_PIN_SET) && !ButtonPressed)
     {
+			
       ButtonPressed = true;
 			NumberPressed += 1;
-			NumberPressed %= 5;
-			HAL_StatusTypeDef result = HAL_DCMI_Start_DMA(&hdcmi,DCMI_MODE_SNAPSHOT,(uint32_t)&FrameBuffer,(uint32_t)(IMG_ROWS * IMG_COLUMNS * 2/4)); 
-			
+			NumberPressed %= characterCount;
+			//HAL_StatusTypeDef result = HAL_DCMI_Start_DMA(&hdcmi,DCMI_MODE_SNAPSHOT,(uint32_t)&FrameBuffer,(uint32_t)(IMG_ROWS * IMG_COLUMNS * 2/4)); 
+			xTaskNotifyGive(defaultTaskHandle);
     }
     else if(GPIOReadPin(BUTTON_PORT,BUTTON_PIN) == GPIO_PIN_RESET)
     {
       ButtonPressed = false;
+			ValueSelected = 0;
+			
+			// reset D-counter
+			debounceCounter = 0x1FFFF;
+			
     }
     //osDelay(1);
 		taskYIELD();
   }
 }
 
+void ShowCommitedText()
+{
+	LCD_ILI9341_Puts(5, 40, &shownBuffer[0], &LCD_Font_11x18, ILI9341_COLOR_WHITE, ILI9341_COLOR_BLACK);
+}
+
+void ShowEncryptedText()
+{
+	LCD_ILI9341_Puts(5, 80, &encryptedBuffer[0], &LCD_Font_11x18, ILI9341_COLOR_WHITE, ILI9341_COLOR_BLACK);
+}
+
+void ShowCharacterList()
+{
+	uint8_t row = 0;
+	for(uint8_t i = 0; i < characterCount; i++)
+	{
+		char ptr = avaibleCharacters[i];
+		char oneChar[2] = { ptr, 0 };
+		
+		if(i == NumberPressed && oneChar[0] != '-' && oneChar[0] != '*')
+		{
+			//uppercase it and make it blue
+			
+			oneChar[0] = oneChar[0] - 32;
+			
+			LCD_ILI9341_Puts(5 + i * 10, row * 20, &oneChar[0], &LCD_Font_11x18, ILI9341_COLOR_BLUE, ILI9341_COLOR_BLACK);
+		}
+		else if(i == NumberPressed)
+		{
+			LCD_ILI9341_Puts(5 + i * 10, row * 20, &oneChar[0], &LCD_Font_11x18, ILI9341_COLOR_BLUE, ILI9341_COLOR_BLACK);
+		}
+		else
+		{
+			LCD_ILI9341_Puts(5 + i * 10, row * 20, &oneChar[0], &LCD_Font_11x18, ILI9341_COLOR_WHITE, ILI9341_COLOR_BLACK);
+		}
+		
+		
+		
+	}
+}
 
 /* StartDefaultTask function */
 void StartDefaultTask(void const * argument)
@@ -145,25 +276,12 @@ void StartDefaultTask(void const * argument)
 	}		
 	else
   {
-		LCD_ILI9341_Puts(100, 165, "Success", &LCD_Font_16x26, ILI9341_COLOR_WHITE, ILI9341_COLOR_BLACK);   
-    // LCD welcome page
-    LCD_ILI9341_Fill(ILI9341_COLOR_BLACK);
-    LCD_ILI9341_Puts(60, 110, "Press button", &LCD_Font_16x26, ILI9341_COLOR_WHITE, ILI9341_COLOR_BLUE);
-    //HAL_DCMI_Start_DMA(&hdcmi,DCMI_MODE_CONTINUOUS,(uint32_t)&FrameBuffer,(uint32_t)(IMG_ROWS * IMG_COLUMNS * 2/4));
+		LCD_ILI9341_Fill(ILI9341_COLOR_BLACK);
+		ShowCharacterList();
+		
 	}
-	LCD_ILI9341_Rotate(LCD_ILI9341_Orientation_Landscape_1);
+	//LCD_ILI9341_Rotate(LCD_ILI9341_Orientation_Landscape_1);
 	
-	int16_t GausBlurKernel[25] = { 1, 4, 	7, 	4, 1,
-																4, 16, 26, 16, 4,
-																7, 26, 41, 26, 7,
-																4, 16, 26, 16, 4,
-																1,  4,  7,  4, 1};
-	
-	int16_t SobelYKernel[25] = {2,   1,   0,   -1,  -2,
-															3,   2,   0,   -2,  -3,
-															4,   3,   0,   -3,  -4,
-															3,   2,   0,   -2,  -3,
-															2,   1,   0,   -1,  -2};
 	
   /* USER CODE BEGIN StartDefaultTask */
   /* Infinite loop */
@@ -171,50 +289,16 @@ void StartDefaultTask(void const * argument)
   {
 		xTaskNotifyWait(0, 0, 0, portMAX_DELAY);
 		
-		if(FrameReady == true)
-    {		
-			// Show camera image
-			//NumberPressed = 4;
-			
-			if(NumberPressed == 4)
-			{
-				memset(buffer, 0, sizeof(buffer));
-				convolution(FrameBuffer, GausBlurKernel, buffer, 0, 0);
-				memset(buffer, 0, sizeof(buffer));
-				grayscale(FrameBuffer);
-				convolutionGray(FrameBuffer, SobelYKernel, buffer, 0, 0);
-			}
-			
-			if(NumberPressed == 3)
-			{
-				test(FrameBuffer);
-			}
-			else if(NumberPressed == 2)
-			{
-				memset(buffer, 0, sizeof(buffer));
-				//memcpy((uint16_t*)FrameBuffer, buffer, sizeof(buffer));
-				convolution(FrameBuffer, GausBlurKernel, buffer, 0, 0);
-				//memcpy((uint16_t*)FrameBuffer, buffer, sizeof(buffer));
-				
-			}
-			else if(NumberPressed == 0)
-			{
-					grayscale(FrameBuffer);
-			}
-			// else default image
-			
-			
-			LCD_ILI9341_DisplayImage((uint16_t*)FrameBuffer);
-			
-			//LCD_ILI9341_DisplayImageSDRAM(0);
-			
-			FrameReady = false;
-			
-			//HAL_StatusTypeDef result = HAL_DCMI_Start_DMA(&hdcmi,DCMI_MODE_SNAPSHOT,(uint32_t)&FrameBuffer,(uint32_t)(IMG_ROWS * IMG_COLUMNS * 2/4));
-			
-		}		
+		//Selection of the characters with uppercased selected one
+		
+		ShowCharacterList();
+		ShowCommitedText();
+		ShowEncryptedText();
+		
+		//Show buffer with selected characters
+		//LCD_ILI9341_Puts(60, 140, &shownBuffer[0] , &LCD_Font_16x26, ILI9341_COLOR_WHITE, ILI9341_COLOR_BLACK);
 		taskYIELD();
-    //osDelay(1);
+		
   }
   /* USER CODE END StartDefaultTask */
 }

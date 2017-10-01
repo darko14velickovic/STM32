@@ -35,7 +35,7 @@
 */
 
 #include "headers.h"
-
+#include "ov7670.h"
 // Image buffer
 volatile uint16_t FrameBuffer[IMG_ROWS*IMG_COLUMNS];
 

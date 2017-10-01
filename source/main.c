@@ -1,5 +1,5 @@
 #include "headers.h"
-#include "dsp.h"
+//#include "dsp.h"
 #include "cmsis_os.h"
 
 volatile bool FrameReady = false;
@@ -20,7 +20,7 @@ void HAL_DCMI_FrameEventCallback(DCMI_HandleTypeDef *hdcmi)
 {
 
   /* Prevent unused argument(s) compilation warning */
-  HAL_SDRAM_Write_16b(&hsdram1,(uint32_t*)SDRAM_START_ADR,(uint16_t*)FrameBuffer,76800);
+  //HAL_SDRAM_Write_16b(&hsdram1,(uint32_t*)SDRAM_START_ADR,(uint16_t*)FrameBuffer,76800);
 
 	FrameReady = true;
 	
@@ -42,8 +42,8 @@ int main(void)
   SystemClock_Config();
   // Initialize all configured peripherals
   MX_GPIO_Init();
-  MX_DMA_Init();
-  MX_DCMI_Init();
+  //MX_DMA_Init();
+	//MX_DCMI_Init();
   MX_I2C1_Init();
   MX_SPI5_Init();
 	MX_FMC_Init();
@@ -59,12 +59,13 @@ int main(void)
   // LCD init page
   LCD_ILI9341_Rotate(LCD_ILI9341_Orientation_Landscape_2);
   LCD_ILI9341_Fill(ILI9341_COLOR_BLACK);
+	//LCD_ILI9341_Puts(20, 55, "Hello world", &LCD_Font_16x26, ILI9341_COLOR_WHITE, ILI9341_COLOR_BLACK);
 	
-	LCD_ILI9341_Puts(20, 55, "Configuring camera", &LCD_Font_16x26, ILI9341_COLOR_WHITE, ILI9341_COLOR_BLACK);
-	LCD_ILI9341_DrawRectangle(99, 110, 221, 130, ILI9341_COLOR_WHITE);
+	//LCD_ILI9341_Puts(20, 55, "Configuring camera", &LCD_Font_16x26, ILI9341_COLOR_WHITE, ILI9341_COLOR_BLACK);
+	//LCD_ILI9341_DrawRectangle(99, 110, 221, 130, ILI9341_COLOR_WHITE);
   
   
-  GPIOSetHigh(LEDS_PORT,LED_GREEN_PIN | LED_RED_PIN);
+  //GPIOSetHigh(LEDS_PORT,LED_GREEN_PIN | LED_RED_PIN);
   
 	/* Call init function for freertos objects (in freertos.c) */
   MX_FREERTOS_Init();

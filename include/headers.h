@@ -27,7 +27,7 @@
 #include "gpio.h"
 #include "fmc.h"
 
-#include "ov7670.h"
+//#include "ov7670.h"
 #include "lcdfonts.h"
 #include "ili9341.h"
 #include "lcdspi.h"
