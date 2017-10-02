@@ -44,9 +44,9 @@ int main(void)
   MX_GPIO_Init();
   //MX_DMA_Init();
 	//MX_DCMI_Init();
-  MX_I2C1_Init();
+  //MX_I2C1_Init();
   MX_SPI5_Init();
-	MX_FMC_Init();
+	//MX_FMC_Init();
   
   LCD_ILI9341_Init();
 	

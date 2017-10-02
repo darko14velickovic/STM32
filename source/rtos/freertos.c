@@ -263,23 +263,9 @@ void ShowCharacterList()
 void StartDefaultTask(void const * argument)
 {
 	
-	
-	// OV7670 configuration
-	if(OV7670Init() == true)
-  {
-		LCD_ILI9341_Puts(100, 165, "Failed", &LCD_Font_16x26, ILI9341_COLOR_RED, ILI9341_COLOR_BLACK);
-		LCD_ILI9341_Puts(20, 200, "Push reset button", &LCD_Font_16x26, ILI9341_COLOR_WHITE, ILI9341_COLOR_BLACK);
-		while(1)
-    {
-      taskYIELD();
-		}
-	}		
-	else
-  {
 		LCD_ILI9341_Fill(ILI9341_COLOR_BLACK);
 		ShowCharacterList();
 		
-	}
 	//LCD_ILI9341_Rotate(LCD_ILI9341_Orientation_Landscape_1);
 	
 	
