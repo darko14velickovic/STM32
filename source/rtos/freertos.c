@@ -284,6 +284,7 @@ int base64_encode( unsigned char *dst, size_t *dlen,
     return( 0 );
 }
 
+
 void UserInteractionTask(void const * argument)
 {
 	
